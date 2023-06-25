@@ -7,12 +7,19 @@ function App(): JSX.Element {
   const [playerTurn, setPlayerTurn] = useState<boolean>(true);
   const [winner, setWinner] = useState<string>('');
   const [disableButtons, setDisableButtons] = useState<boolean>(false);
+  const [showPlayAgain, setShowPlayAgain] = useState<boolean>(false);
 
   useEffect(() => {
     if (!playerTurn && matches > 0) {
       setTimeout(makeAITurn, 1000);
     }
   }, [playerTurn, matches]);
+
+  useEffect(() => {
+    if (winner) {
+      setShowPlayAgain(true);
+    }
+  }, [winner]);
 
   const handleMatchSelection = (numMatches: number): void => {
     if (matches - numMatches >= 0 && playerTurn) {
@@ -46,8 +53,13 @@ function App(): JSX.Element {
 
   const closeModal = (): void => {
     setWinner('');
+    setShowPlayAgain(false);
+  };
+
+  const handlePlayAgain = (): void => {
     setMatches(25);
     setPlayerTurn(true);
+    setWinner('');
   };
 
   return (
@@ -56,17 +68,30 @@ function App(): JSX.Element {
       <h2>{playerTurn ? 'Player' : 'AI'}'s Turn</h2>
       {playerTurn && matches > 0 && (
         <div className="buttonContainer">
-          <button disabled={disableButtons} onClick={() => handleMatchSelection(1)}>Take 1</button>
-          <button disabled={disableButtons} onClick={() => handleMatchSelection(2)}>Take 2</button>
-          <button disabled={disableButtons} onClick={() => handleMatchSelection(3)}>Take 3</button>
+          <button disabled={disableButtons} onClick={() => handleMatchSelection(1)}>
+            Take 1
+          </button>
+          <button disabled={disableButtons} onClick={() => handleMatchSelection(2)}>
+            Take 2
+          </button>
+          <button disabled={disableButtons} onClick={() => handleMatchSelection(3)}>
+            Take 3
+          </button>
         </div>
       )}
       {!playerTurn && (
         <div className="buttonContainer">
-          <button disabled={true}>Take 1</button>
-          <button disabled={true}>Take 2</button>
-          <button disabled={true}>Take 3</button>
+          {(matches !== 0 || winner) && (
+            <>
+              <button disabled={true}>Take 1</button>
+              <button disabled={true}>Take 2</button>
+              <button disabled={true}>Take 3</button>
+            </>
+          )}
         </div>
+      )}
+      {matches === 0 && !winner && (
+        <button onClick={handlePlayAgain}>Play Again</button>
       )}
       <Modal
         isOpen={!!winner}
@@ -75,8 +100,11 @@ function App(): JSX.Element {
         overlayClassName="modalOverlay"
         contentLabel="Game Over"
       >
+        <button className="closeButton" onClick={closeModal}>
+          ×
+        </button>
         <h3>{`${winner} wins!`}</h3>
-        <button onClick={closeModal}>Play Again</button>
+        <button onClick={handlePlayAgain}>Play Again</button>
       </Modal>
     </div>
   );
