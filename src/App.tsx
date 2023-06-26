@@ -4,6 +4,9 @@ import InstructionsModal from './components/InstructionsModal/InstructionsModal'
 import GameOverModal from './components/GameOverModal/GameOverModal';
 import PlayAgainButton from './components/PlayAgainButton/PlayAgainButton';
 import './App.css';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root'); 
 
 const App: React.FC = () => {
   const [matches, setMatches] = useState<number>(25);
@@ -49,7 +52,10 @@ const App: React.FC = () => {
     const availableMoves = matches > 0;
 
     if (!availableMoves) {
-      return;
+      setTimeout(() => {
+        checkWinner(remainingMatches);
+        checkAvailableMoves(remainingMatches);
+      }, 0);
     }
 
     let aiMatches: number;
@@ -58,7 +64,7 @@ const App: React.FC = () => {
       if (aiTotalMatches % 2 !== 0) {
         aiMatches = 3;
       } else {
-        aiMatches = 2;
+        aiMatches = 1;
       }
     } else if (matches === 2) {
       if (aiTotalMatches % 2 !== 0) {
@@ -92,10 +98,16 @@ const App: React.FC = () => {
 
   const checkWinner = (matches: number) => {
     if (matches === 0) {
-      const winner = playerTotalMatches % 2 === 0 ? '🥳 Player' : '🤖 AI';
-      setWinner(winner);
+      const playerAvailableMoves = playerTotalMatches % 2 !== 0;
+      const aiAvailableMoves = aiTotalMatches % 2 !== 0;
+  
+      if (!playerAvailableMoves && !aiAvailableMoves) {
+        const winner = playerTurn ? '🤖 AI' : '🥳 Player';
+        setWinner(winner);
+      }
     }
   };
+  
 
   const closeModal = () => {
     setWinner('');
