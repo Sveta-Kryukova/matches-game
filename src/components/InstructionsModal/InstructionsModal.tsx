@@ -27,6 +27,7 @@ const InstructionsModal: React.FC<InstructionsModalProps> = ({
         <li>There are 25 matches on the table.</li>
         <li>Players take turns removing 1, 2, or 3 matches from the table.</li>
         <li>The game is over once all matches are taken. Whoever has the even amount of matches wins.</li>
+        <li>User can choose game mode (Player first or Ai first move) </li>
       </ul>
       <button onClick={closeModal}>Start Game</button>
     </Modal>
