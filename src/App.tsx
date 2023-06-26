@@ -9,8 +9,8 @@ import Modal from 'react-modal';
 Modal.setAppElement('#root'); 
 
 enum GameMode {
-  PlayerFirst = 'PlayerFirst',
-  AIFirst = 'AIFirst',
+  PlayerFirst = 'Player First',
+  AIFirst = 'AI First',
 }
 
 const App: React.FC = () => {
@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const [showRulesModal, setShowRulesModal] = useState<boolean>(true);
   const [playerTotalMatches, setPlayerTotalMatches] = useState<number>(0);
   const [aiTotalMatches, setAITotalMatches] = useState<number>(0);
-  const [gameMode, setGameMode] = useState<GameMode>(GameMode.PlayerFirst);
+  const [gameMode, setGameMode] = useState<GameMode | null>(null);
 
   useEffect(() => {
     if (!playerTurn && matches > 0) {
@@ -71,7 +71,7 @@ const App: React.FC = () => {
       if (aiTotalMatches % 2 !== 0) {
         aiMatches = 3;
       } else {
-        aiMatches = 1;
+        aiMatches = 2;
       }
     } else if (matches === 2) {
       if (aiTotalMatches % 2 !== 0) {
@@ -105,13 +105,13 @@ const App: React.FC = () => {
 
   const checkWinner = (matches: number) => {
     if (matches === 0) {
-      const playerAvailableMoves = playerTotalMatches % 2 !== 0;
-      const aiAvailableMoves = aiTotalMatches % 2 !== 0;
-  
-      if (!playerAvailableMoves && !aiAvailableMoves) {
+      const playerAvailableMoves = playerTotalMatches % 2 !== 0 && aiTotalMatches % 2 === 0;
+      const aiAvailableMoves = aiTotalMatches % 2 !== 0 && playerTotalMatches % 2 === 0;
+
+      if (!playerAvailableMoves || !aiAvailableMoves) {
         const winner = playerTurn ? '🤖 AI' : '🥳 Player';
         setWinner(winner);
-      } else if (playerAvailableMoves && aiAvailableMoves) {
+      } else {
         setWinner('');
       }
     }
@@ -126,28 +126,35 @@ const App: React.FC = () => {
 
   const handlePlayAgain = () => {
     setMatches(25);
-    setPlayerTurn(true);
+    setPlayerTurn(gameMode === GameMode.PlayerFirst);
     setWinner('');
     setPlayerTotalMatches(0);
     setAITotalMatches(0);
     setDisableButtons(false);
+    setGameMode(null);
   };
+  
 
   const showInstructionsModal = () => {
     setShowRulesModal(true);
   };
 
-  const handleGameModeChange = (mode: GameMode) => {
-    if (mode !== gameMode) {
-      setGameMode(mode);
-      handlePlayAgain();
-      if (mode === GameMode.AIFirst) {
-        setTimeout(() => {
-          makeAITurn();
-        }, 1000);
-      }
-    }
+  const handleGameModeSelect = (mode: GameMode) => {
+    setGameMode(mode);
+    setPlayerTurn(mode === GameMode.PlayerFirst);
   };
+
+  if (!gameMode && !showRulesModal) {
+    return (
+      <div className="App container">
+        <h1>Select Game Mode</h1>
+        <div className="gameModeButtons">
+          <button onClick={() => handleGameModeSelect(GameMode.PlayerFirst)}>Player First</button>
+          <button onClick={() => handleGameModeSelect(GameMode.AIFirst)}>AI First</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="App container">
@@ -171,28 +178,6 @@ const App: React.FC = () => {
       <button className="instructionsButton" onClick={showInstructionsModal}>
         Instructions
       </button>
-      <div>
-        <label>
-          <input
-            type="radio"
-            name="gameMode"
-            value={GameMode.PlayerFirst}
-            checked={gameMode === GameMode.PlayerFirst}
-            onChange={() => handleGameModeChange(GameMode.PlayerFirst)}
-          />
-          Player First
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="gameMode"
-            value={GameMode.AIFirst}
-            checked={gameMode === GameMode.AIFirst}
-            onChange={() => handleGameModeChange(GameMode.AIFirst)}
-          />
-          AI First
-        </label>
-      </div>
       <InstructionsModal isOpen={showRulesModal} closeModal={closeModal} />
       <GameOverModal isOpen={!!winner} closeModal={closeModal} winner={winner} handlePlayAgain={handlePlayAgain} />
       {showPlayAgain && <PlayAgainButton onClick={handlePlayAgain} />}
