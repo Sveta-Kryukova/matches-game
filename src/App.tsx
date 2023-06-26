@@ -6,7 +6,7 @@ import PlayAgainButton from './components/PlayAgainButton/PlayAgainButton';
 import './App.css';
 import Modal from 'react-modal';
 
-Modal.setAppElement('#root'); 
+Modal.setAppElement('#root');
 
 enum GameMode {
   PlayerFirst = 'Player First',
@@ -23,6 +23,9 @@ const App: React.FC = () => {
   const [playerTotalMatches, setPlayerTotalMatches] = useState<number>(0);
   const [aiTotalMatches, setAITotalMatches] = useState<number>(0);
   const [gameMode, setGameMode] = useState<GameMode | null>(null);
+  const [pileSize, setPileSize] = useState<number>(25);
+  const [errorModalOpen, setErrorModalOpen] = useState<boolean>(false);
+
 
   useEffect(() => {
     if (!playerTurn && matches > 0) {
@@ -125,7 +128,7 @@ const App: React.FC = () => {
   };
 
   const handlePlayAgain = () => {
-    setMatches(25);
+    setMatches(pileSize);
     setPlayerTurn(gameMode === GameMode.PlayerFirst);
     setWinner('');
     setPlayerTotalMatches(0);
@@ -133,15 +136,31 @@ const App: React.FC = () => {
     setDisableButtons(false);
     setGameMode(null);
   };
-  
 
   const showInstructionsModal = () => {
     setShowRulesModal(true);
   };
 
   const handleGameModeSelect = (mode: GameMode) => {
-    setGameMode(mode);
-    setPlayerTurn(mode === GameMode.PlayerFirst);
+    if (pileSize >= 7 && pileSize <= 99 && pileSize % 2 !== 0) {
+      setGameMode(mode);
+      setPlayerTurn(mode === GameMode.PlayerFirst);
+    } else {
+      setErrorModalOpen(true);
+      setGameMode(null);
+    }
+  };
+  
+  
+
+  const handlePileSizeSelect = () => {
+    if (pileSize >= 7 && pileSize <= 99 && pileSize % 2 !== 0) {
+      setMatches(pileSize);
+      setGameMode(gameMode === null ? GameMode.PlayerFirst : gameMode);
+    } else {
+      setErrorModalOpen(true);
+      setGameMode(null);
+    }
   };
 
   if (!gameMode && !showRulesModal) {
@@ -152,6 +171,28 @@ const App: React.FC = () => {
           <button onClick={() => handleGameModeSelect(GameMode.PlayerFirst)}>Player First</button>
           <button onClick={() => handleGameModeSelect(GameMode.AIFirst)}>AI First</button>
         </div>
+        <h1>Enter Pile Size</h1>
+        <div className="pileSizeInput">
+          <input
+            type="number"
+            value={pileSize}
+            onChange={(e) => setPileSize(parseInt(e.target.value))}
+          />
+          <button onClick={handlePileSizeSelect}>Select</button>
+        </div>
+        <Modal
+          isOpen={errorModalOpen}
+          onRequestClose={() => setErrorModalOpen(false)}
+          contentLabel="Error Modal"
+          className="modal"
+          overlayClassName="modalOverlay"
+        >
+          <h2>Error: Invalid Pile Size</h2>
+          <p>Please enter an odd number between 7 and 99 for the pile size.</p>
+          <button className="closeButton" onClick={() => setErrorModalOpen(false)}>
+        ×
+      </button>
+        </Modal>
       </div>
     );
   }
@@ -181,8 +222,24 @@ const App: React.FC = () => {
       <InstructionsModal isOpen={showRulesModal} closeModal={closeModal} />
       <GameOverModal isOpen={!!winner} closeModal={closeModal} winner={winner} handlePlayAgain={handlePlayAgain} />
       {showPlayAgain && <PlayAgainButton onClick={handlePlayAgain} />}
+      {errorModalOpen && (
+      <Modal
+        isOpen={errorModalOpen}
+        onRequestClose={() => setErrorModalOpen(false)}
+        contentLabel="Error Modal"
+        className="modal"
+        overlayClassName="modalOverlay"
+      >
+        <h2>Error: Invalid Pile Size</h2>
+        <p>Please enter an odd number between 7 and 99 for the pile size.</p>
+        <button className="closeButton" onClick={() => setErrorModalOpen(false)}>
+          ×
+        </button>
+      </Modal>
+    )}
     </div>
   );
 };
 
 export default App;
+

@@ -90,4 +90,15 @@ button {
   right: 150px;
 }
 
+input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #f1356d !important;
+  margin-right: 10px;
+}
+
+.pileSizeInput {
+  display: flex;
+}
+
 
