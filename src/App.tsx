@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ButtonContainer from './components/ButtonContainer/ButtonContainer';
 import InstructionsModal from './components/InstructionsModal/InstructionsModal';
 import GameOverModal from './components/GameOverModal/GameOverModal';
@@ -23,15 +23,9 @@ const App: React.FC = () => {
   const [playerTotalMatches, setPlayerTotalMatches] = useState<number>(0);
   const [aiTotalMatches, setAITotalMatches] = useState<number>(0);
   const [gameMode, setGameMode] = useState<GameMode | null>(null);
-  const [pileSize, setPileSize] = useState<number>(25);
+  const [pileSize, setPileSize] = useState<number>(0);
   const [errorModalOpen, setErrorModalOpen] = useState<boolean>(false);
-
-
-  useEffect(() => {
-    if (!playerTurn && matches > 0) {
-      setTimeout(makeAITurn, 1000);
-    }
-  }, [playerTurn, matches]);
+  const [maxMatches, setMaxMatches] = useState<number>(2);
 
   useEffect(() => {
     if (winner) {
@@ -46,18 +40,40 @@ const App: React.FC = () => {
 
   const handleMatchSelection = (numMatches: number) => {
     if (playerTurn) {
-      const remainingMatches = matches - numMatches;
-      if (remainingMatches >= 0) {
-        setMatches(remainingMatches);
-        setPlayerTurn(false);
-        setPlayerTotalMatches(playerTotalMatches + numMatches);
-        checkWinner(remainingMatches);
-        checkAvailableMoves(remainingMatches);
+      if (numMatches >= 1 && numMatches <= maxMatches) {
+        const remainingMatches = matches - numMatches;
+        if (remainingMatches >= 0) {
+          setMatches(remainingMatches);
+          setPlayerTurn(false);
+          setPlayerTotalMatches(playerTotalMatches + numMatches);
+          checkWinner(remainingMatches);
+          checkAvailableMoves(remainingMatches);
+        }
       }
     }
   };
 
-  const makeAITurn = () => {
+  const checkAvailableMoves = useCallback((matches: number) => {
+    if (matches === 0) {
+      setDisableButtons(true);
+    }
+  }, []);
+
+  const checkWinner = useCallback((matches: number) => {
+    if (matches === 0) {
+      const playerAvailableMoves = playerTotalMatches % 2 !== 0 && aiTotalMatches % 2 === 0;
+      const aiAvailableMoves = aiTotalMatches % 2 !== 0 && playerTotalMatches % 2 === 0;
+
+      if (!playerAvailableMoves || !aiAvailableMoves) {
+        const winner = playerTurn ? '🤖 AI' : '🥳 Player';
+        setWinner(winner);
+      } else {
+        setWinner('');
+      }
+    }
+  }, [aiTotalMatches, playerTotalMatches, playerTurn]);
+
+  const makeAITurn = useCallback(() => {
     const availableMoves = matches > 0;
 
     if (!availableMoves) {
@@ -98,27 +114,13 @@ const App: React.FC = () => {
       checkWinner(remainingMatches);
       checkAvailableMoves(remainingMatches);
     }, 0);
-  };
+  }, [matches, aiTotalMatches, setMatches, setPlayerTurn, setAITotalMatches, checkWinner, checkAvailableMoves]);
 
-  const checkAvailableMoves = (matches: number) => {
-    if (matches === 0) {
-      setDisableButtons(true);
+  useEffect(() => {
+    if (!playerTurn && matches > 0) {
+      setTimeout(makeAITurn, 1000);
     }
-  };
-
-  const checkWinner = (matches: number) => {
-    if (matches === 0) {
-      const playerAvailableMoves = playerTotalMatches % 2 !== 0 && aiTotalMatches % 2 === 0;
-      const aiAvailableMoves = aiTotalMatches % 2 !== 0 && playerTotalMatches % 2 === 0;
-
-      if (!playerAvailableMoves || !aiAvailableMoves) {
-        const winner = playerTurn ? '🤖 AI' : '🥳 Player';
-        setWinner(winner);
-      } else {
-        setWinner('');
-      }
-    }
-  };
+  }, [playerTurn, matches, makeAITurn]);
 
   const closeModal = () => {
     setWinner('');
@@ -135,6 +137,8 @@ const App: React.FC = () => {
     setAITotalMatches(0);
     setDisableButtons(false);
     setGameMode(null);
+    setPileSize(0);
+    setMaxMatches(2);
   };
 
   const showInstructionsModal = () => {
@@ -142,43 +146,66 @@ const App: React.FC = () => {
   };
 
   const handleGameModeSelect = (mode: GameMode) => {
-    if (pileSize >= 7 && pileSize <= 99 && pileSize % 2 !== 0) {
-      setGameMode(mode);
-      setPlayerTurn(mode === GameMode.PlayerFirst);
-    } else {
+    if (
+      pileSize < 7 ||
+      pileSize > 99 ||
+      pileSize % 2 === 0 ||
+      (pileSize === 7 && maxMatches > 5) ||
+      (pileSize === 9 && maxMatches > 7) ||
+      maxMatches < 2 ||
+      maxMatches > 9
+    ) {
       setErrorModalOpen(true);
       setGameMode(null);
+    } else {
+      setGameMode(mode);
+      setPlayerTurn(mode === GameMode.PlayerFirst);
     }
   };
-  
-  
 
   const handlePileSizeSelect = () => {
     if (pileSize >= 7 && pileSize <= 99 && pileSize % 2 !== 0) {
       setMatches(pileSize);
-      setGameMode(gameMode === null ? GameMode.PlayerFirst : gameMode);
     } else {
       setErrorModalOpen(true);
-      setGameMode(null);
+    }
+  };
+
+  const handleMaxMatchesSelect = () => {
+    if (maxMatches >= 2 && maxMatches <= 9) {
+      setMaxMatches(maxMatches);
+    } else {
+      setErrorModalOpen(true);
     }
   };
 
   if (!gameMode && !showRulesModal) {
     return (
       <div className="App container">
-        <h1>Select Game Mode</h1>
-        <div className="gameModeButtons">
-          <button onClick={() => handleGameModeSelect(GameMode.PlayerFirst)}>Player First</button>
-          <button onClick={() => handleGameModeSelect(GameMode.AIFirst)}>AI First</button>
-        </div>
         <h1>Enter Pile Size</h1>
         <div className="pileSizeInput">
           <input
             type="number"
             value={pileSize}
             onChange={(e) => setPileSize(parseInt(e.target.value))}
+            onBlur={handlePileSizeSelect}
           />
           <button onClick={handlePileSizeSelect}>Select</button>
+        </div>
+        <h1>Select Maximum Matches per Turn</h1>
+        <div className="maxMatchesInput">
+          <input
+            type="number"
+            value={maxMatches}
+            onChange={(e) => setMaxMatches(parseInt(e.target.value))}
+            onBlur={handleMaxMatchesSelect}
+          />
+          <button onClick={handleMaxMatchesSelect}>Select</button>
+        </div>
+        <h1>Select Game Mode</h1>
+        <div className="gameModeButtons">
+          <button onClick={() => handleGameModeSelect(GameMode.PlayerFirst)}>Player First</button>
+          <button onClick={() => handleGameModeSelect(GameMode.AIFirst)}>AI First</button>
         </div>
         <Modal
           isOpen={errorModalOpen}
@@ -187,11 +214,17 @@ const App: React.FC = () => {
           className="modal"
           overlayClassName="modalOverlay"
         >
-          <h2>Error: Invalid Pile Size</h2>
-          <p>Please enter an odd number between 7 and 99 for the pile size.</p>
-          <button className="closeButton" onClick={() => setErrorModalOpen(false)}>
-        ×
-      </button>
+          <h2>Error: Invalid Input</h2>
+          {pileSize < 7 || pileSize > 99 || pileSize % 2 === 0 ? (
+            <p>Please enter a value between 7 and 99 (inclusive) and ensure it is an odd number.</p>
+          ) : pileSize === 7 && maxMatches > 5 ? (
+            <p>For a pile size of 7, the maximum matches per turn cannot exceed 5.</p>
+          ) : pileSize === 9 && maxMatches > 7 ? (
+            <p>For a pile size of 9, the maximum matches per turn cannot exceed 7.</p>
+          ) : (
+            <p>Please enter a value between 2 and 9 (inclusive) for the maximum matches per turn.</p>
+          )}
+          <button onClick={() => setErrorModalOpen(false)}>Close</button>
         </Modal>
       </div>
     );
@@ -201,20 +234,22 @@ const App: React.FC = () => {
     <div className="App container">
       <h1>Matches: {matches}</h1>
       <h2>{playerTurn ? '⏳ Player' : '🤔 AI'}'s Turn</h2>
-      {playerTurn && matches > 0 && (
-        <ButtonContainer disabledButtons={disableButtons} handleMatchSelection={handleMatchSelection} />
-      )}
-      {!playerTurn && (
+      {playerTurn && matches > 0 ? (
+        <ButtonContainer
+          maxMatches={maxMatches}
+          handleMatchSelection={handleMatchSelection}
+          disableButtons={disableButtons}
+        />
+      ) : (
         <div className="buttonContainer">
-          {(matches !== 0 || winner) && (
-            <>
-              <button disabled={true}>Take 1</button>
-              <button disabled={true}>Take 2</button>
-              <button disabled={true}>Take 3</button>
-            </>
-          )}
+          {Array.from({ length: maxMatches }, (_, index) => index + 1).map((num) => (
+            <button key={num} disabled>
+              Take {num}
+            </button>
+          ))}
         </div>
       )}
+
       {matches === 0 && !winner && <button onClick={handlePlayAgain}>Play Again</button>}
       <button className="instructionsButton" onClick={showInstructionsModal}>
         Instructions
@@ -222,24 +257,8 @@ const App: React.FC = () => {
       <InstructionsModal isOpen={showRulesModal} closeModal={closeModal} />
       <GameOverModal isOpen={!!winner} closeModal={closeModal} winner={winner} handlePlayAgain={handlePlayAgain} />
       {showPlayAgain && <PlayAgainButton onClick={handlePlayAgain} />}
-      {errorModalOpen && (
-      <Modal
-        isOpen={errorModalOpen}
-        onRequestClose={() => setErrorModalOpen(false)}
-        contentLabel="Error Modal"
-        className="modal"
-        overlayClassName="modalOverlay"
-      >
-        <h2>Error: Invalid Pile Size</h2>
-        <p>Please enter an odd number between 7 and 99 for the pile size.</p>
-        <button className="closeButton" onClick={() => setErrorModalOpen(false)}>
-          ×
-        </button>
-      </Modal>
-    )}
     </div>
   );
 };
 
 export default App;
-

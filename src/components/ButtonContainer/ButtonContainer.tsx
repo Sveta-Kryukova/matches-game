@@ -1,24 +1,25 @@
-import React, { MouseEventHandler } from 'react';
-import MatchButton from '../MatchButton/MatchButton';
+import React from 'react';
 
-interface ButtonContainerProps {
-  disabledButtons: boolean;
+type ButtonContainerProps = {
+  maxMatches: number;
   handleMatchSelection: (numMatches: number) => void;
-}
+  disableButtons: boolean;
+};
 
 const ButtonContainer: React.FC<ButtonContainerProps> = ({
-  disabledButtons,
+  maxMatches,
   handleMatchSelection,
+  disableButtons,
 }) => {
-  const handleClick = (numMatches: number): MouseEventHandler<HTMLButtonElement> => {
-    return () => handleMatchSelection(numMatches);
-  };
+  const matchButtons = Array.from({ length: maxMatches }, (_, index) => index + 1);
 
   return (
     <div className="buttonContainer">
-      <MatchButton disabled={disabledButtons} onClick={handleClick(1)} label="Take 1" />
-      <MatchButton disabled={disabledButtons} onClick={handleClick(2)} label="Take 2" />
-      <MatchButton disabled={disabledButtons} onClick={handleClick(3)} label="Take 3" />
+      {matchButtons.map((num) => (
+        <button key={num} onClick={() => handleMatchSelection(num)} disabled={disableButtons}>
+          Take {num}
+        </button>
+      ))}
     </div>
   );
 };

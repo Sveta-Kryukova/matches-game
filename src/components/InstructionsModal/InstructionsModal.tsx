@@ -28,6 +28,8 @@ const InstructionsModal: React.FC<InstructionsModalProps> = ({
         <li>Players take turns removing 1, 2, or 3 matches from the table.</li>
         <li>The game is over once all matches are taken. Whoever has the even amount of matches wins.</li>
         <li>User can choose game mode (Player first or Ai first move) </li>
+        <li>User can choose Pile Size (Pile Size can be from 7 to 9) </li>
+        <li>User can choose Maximum Matches per turn (Maximum Matches per turn can be from 2 to 9) </li>
       </ul>
       <button onClick={closeModal}>Start Game</button>
     </Modal>
